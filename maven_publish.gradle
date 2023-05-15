@@ -1,0 +1,84 @@
+import java.text.SimpleDateFormat
+
+ext {
+    RELEASES_REPO_URL = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+    SNAPSHOTS_REPO_URL = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+}
+
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+            from components.java
+            pom {
+                name = project.name
+                description = 'A concise description of my library'
+                url = 'https://github.com/ethereal-collection/galaxy'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'levin8023'
+                        name = 'levin'
+                        email = 'levin8023@outlook.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://https://github.com/ethereal-collection/galaxy.git'
+                    developerConnection = 'scm:git:ssh://https://github.com/ethereal-collection/galaxy.git'
+                    url = 'https://github.com/ethereal-collection/galaxy'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = version.endsWith('SNAPSHOT') ? SNAPSHOTS_REPO_URL : RELEASES_REPO_URL
+            credentials {
+                username = project.properties["ossrhUsername"]
+                password = project.properties["ossrhPassword"]
+            }
+        }
+    }
+}
+
+//signing {
+//    sign publishing.publications.mavenJava
+//}
+
+
+javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Version': project.version,
+                'Implementation-Title': project.group + ':' + project.name,
+                'Built-By': project.properties["ossrhUsername"],
+                'Build-Date': new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date()),
+                'Created-By': "Gradle ${gradle.gradleVersion}",
+                'Build-Jdk': "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+                'Build-OS': "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
+        )
+    }
+    baseName project.name
+}
